@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adobe Stock — Smart Layers</title>
+  <style>
+    :root {
+      --bg-0: #141414;
+      --bg-1: #1c1c1c;
+      --bg-2: #242424;
+      --bg-3: #2e2e2e;
+      --border: #383838;
+      --border-sub: #2c2c2c;
+      --text-1: #f5f5f5;
+      --text-2: #999;
+      --text-3: #666;
+      --accent: #1268d2;
+      --accent-h: #0d55b5;
+      --success: #2d9b64;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+      background: var(--bg-0);
+      color: var(--text-1);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+
+    .header {
+      height: 52px;
+      background: #111;
+      border-bottom: 1px solid var(--border-sub);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 300;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .logo-mark {
+      width: 30px; height: 30px;
+      background: #eb1000;
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; color: #fff; letter-spacing: -.5px;
+    }
+
+    .logo-name { font-size: 13px; font-weight: 600; color: #fff; }
+
+    .header-nav {
+      display: flex; align-items: center; gap: 2px;
+      margin-left: 8px;
+    }
+
+    .nav-item {
+      color: #bbb; font-size: 13px;
+      padding: 6px 9px; border-radius: 4px;
+      display: flex; align-items: center; gap: 4px;
+      cursor: pointer; transition: color .15s; white-space: nowrap;
+    }
+    .nav-item:hover { color: #fff; }
+    .nav-item .caret { font-size: 8px; opacity: .6; }
+
+    .header-search {
+      flex: 1; max-width: 420px; position: relative; margin-left: auto;
+    }
+
+    .header-search input {
+      width: 100%; height: 34px;
+      background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px;
+      color: #f0f0f0; padding: 0 36px 0 12px; font-size: 13px; outline: none;
+      transition: border-color .15s;
+    }
+    .header-search input:focus { border-color: #555; }
+    .header-search input::placeholder { color: #666; }
+
+    .search-icon {
+      position: absolute; right: 10px; top: 50%;
+      transform: translateY(-50%);
+      color: #666; font-size: 15px; pointer-events: none;
+    }
+
+    .header-right {
+      display: flex; align-items: center; gap: 14px; flex-shrink: 0;
+    }
+
+    .link-plain { color: #ccc; font-size: 13px; cursor: pointer; }
+
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 4px;
+      padding: 7px 14px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-primary:hover { background: var(--accent-h); }
+
+    /* ── LAYOUT ─────────────────────────────────────────── */
+
+    .page {
+      display: flex;
+      height: calc(100vh - 52px);
+      overflow: hidden;
+    }
+
+    /* ── LAYERS SIDEBAR ─────────────────────────────────── */
+
+    .layers-sidebar {
+      width: 0; flex-shrink: 0;
+      background: #1e1e1e;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+      transition: width .45s cubic-bezier(.4,0,.2,1);
+    }
+    .layers-sidebar.open { width: 210px; }
+
+    .sidebar-inner { width: 210px; }
+
+    .sidebar-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 13px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-title {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text-2);
+    }
+
+    .layer-count { background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+
+    .layer-row {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #282828;
+      cursor: pointer;
+      opacity: 0; transform: translateX(-10px);
+      transition: opacity .3s, transform .3s, background .1s;
+    }
+    .layer-row.visible { opacity: 1; transform: translateX(0); }
+    .layer-row:hover { background: #282828; }
+    .layer-row.selected { background: rgba(18,104,210,.22); }
+
+    .eye-btn {
+      width: 16px; height: 16px; flex-shrink: 0;
+      font-size: 11px; display: flex; align-items: center; justify-content: center;
+      opacity: .7; transition: opacity .15s; user-select: none; cursor: pointer;
+    }
+    .eye-btn:hover { opacity: 1; }
+    .eye-btn.off { opacity: .25; }
+
+    .thumb {
+      width: 34px; height: 34px; flex-shrink: 0;
+      border-radius: 3px; overflow: hidden; position: relative;
+    }
+    .thumb::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(45deg,#6a6a6a 25%,transparent 25%),
+        linear-gradient(-45deg,#6a6a6a 25%,transparent 25%),
+        linear-gradient(45deg,transparent 75%,#6a6a6a 75%),
+        linear-gradient(-45deg,transparent 75%,#6a6a6a 75%);
+      background-size: 6px 6px;
+      background-position: 0 0,0 3px,3px -3px,-3px 0;
+      background-color: #4a4a4a;
+    }
+    .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+    .layer-info { flex: 1; min-width: 0; }
+    .layer-name { font-size: 12px; color: #ddd; font-weight: 500; }
+    .layer-meta { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+
+    /* ── CANVAS ─────────────────────────────────────────── */
+
+    .canvas-wrap {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-1);
+      position: relative; overflow: hidden;
+    }
+
+    .canvas-hint {
+      position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; color: var(--text-3);
+      background: rgba(0,0,0,.5);
+      padding: 5px 12px; border-radius: 20px;
+      pointer-events: none;
+      opacity: 0; transition: opacity .3s;
+      white-space: nowrap;
+    }
+    .canvas-hint.show { opacity: 1; }
+
+    .canvas-frame {
+      position: relative;
+      width: min(540px, calc(100vh - 130px));
+      height: min(540px, calc(100vh - 130px));
+      border-radius: 6px; overflow: hidden;
+      background-image:
+        linear-gradient(45deg,#4a4a4a 25%,transparent 25%),
+        linear-gradient(-45deg,#4a4a4a 25%,transparent 25%),
+        linear-gradient(45deg,transparent 75%,#4a4a4a 75%),
+        linear-gradient(-45deg,transparent 75%,#4a4a4a 75%);
+      background-size: 20px 20px;
+      background-position: 0 0,0 10px,10px -10px,-10px 0;
+      background-color: #3a3a3a;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.06);
+    }
+
+    /* Full composite */
+    #img-full {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      z-index: 50;
+      transition: opacity .4s ease;
+    }
+
+    /* Layer containers */
+    .lc {
+      position: absolute; inset: 0;
+      transform-origin: center center;
+      opacity: 0;
+      transition: opacity .35s ease;
+      pointer-events: none;
+    }
+    .lc.visible { opacity: 1; }
+    .lc.selected { pointer-events: all; cursor: move; }
+
+    .lc img.layer-img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+      transition: filter .15s;
+    }
+
+    /* Selection handles (shown only on selected layer) */
+    .lc-handles {
+      display: none;
+      position: absolute; inset: 0;
+      pointer-events: none;
+    }
+    .lc.selected .lc-handles { display: block; }
+
+    .sel-border {
+      position: absolute; inset: 0;
+      border: 1.5px solid rgba(18,104,210,.8);
+      pointer-events: none;
+    }
+
+    .handle {
+      position: absolute;
+      width: 10px; height: 10px;
+      background: #fff;
+      border: 2px solid #1268d2;
+      border-radius: 2px;
+      pointer-events: all;
+    }
+    /* corners — translate offsets bring them to the exact corner */
+    .h-tl { top:0; left:0;   transform: translate(-50%,-50%); cursor: nw-resize; }
+    .h-tr { top:0; right:0;  transform: translate(50%,-50%);  cursor: ne-resize; }
+    .h-bl { bottom:0; left:0;  transform: translate(-50%,50%); cursor: sw-resize; }
+    .h-br { bottom:0; right:0; transform: translate(50%,50%);  cursor: se-resize; }
+
+    /* Scan animation */
+    .scan-overlay {
+      position: absolute; inset: 0; z-index: 60;
+      pointer-events: none; overflow: hidden; opacity: 0;
+    }
+    .scan-line {
+      position: absolute; left: 0; right: 0; height: 2px; top: -2px;
+      background: linear-gradient(90deg,transparent,#6db3ff,#a78bfa,#6db3ff,transparent);
+      box-shadow: 0 0 16px 4px rgba(109,179,255,.55);
+      animation: scan 1.6s cubic-bezier(.4,0,.6,1) forwards;
+    }
+    .scan-glow {
+      position: absolute; left: 0; right: 0; height: 60px; top: -60px;
+      background: linear-gradient(180deg,rgba(109,179,255,.08),transparent);
+      animation: scan 1.6s cubic-bezier(.4,0,.6,1) forwards;
+    }
+    @keyframes scan { 0% { top: -2px; } 100% { top: 100%; } }
+
+    /* ── INFO PANEL ─────────────────────────────────────── */
+
+    .info-panel {
+      width: 290px; flex-shrink: 0;
+      background: var(--bg-2);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 18px 16px 28px;
+      display: flex; flex-direction: column; gap: 0;
+    }
+
+    .panel-nav {
+      display: flex; justify-content: flex-end; gap: 7px;
+      margin-bottom: 14px;
+    }
+    .panel-nav-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      color: #ccc; font-size: 13px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+
+    .transparent-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 3px; padding: 4px 8px;
+      font-size: 11px; color: #bbb; margin-bottom: 11px;
+    }
+
+    .img-title { font-size: 15px; font-weight: 600; line-height: 1.45; margin-bottom: 4px; }
+    .img-author { font-size: 12px; color: var(--text-2); margin-bottom: 16px; }
+
+    .meta-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 9px 10px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .meta-cell label {
+      display: block; font-size: 9.5px;
+      text-transform: uppercase; letter-spacing: .07em;
+      color: var(--text-3); margin-bottom: 2px;
+    }
+    .meta-cell span { font-size: 12px; color: var(--text-1); }
+
+    /* Smart Layers block (pre-decompose) */
+    .sl-block { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .sl-block.hidden { display: none; }
+
+    .sl-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+
+    .sl-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 3px;
+      background: linear-gradient(135deg,#7026c9,#1268d2);
+      font-size: 11px; font-weight: 700; color: #fff;
+    }
+
+    .sl-beta { font-size: 10px; color: var(--text-3); }
+
+    .mode-switcher {
+      display: flex;
+      background: var(--bg-1); border: 1px solid var(--border);
+      border-radius: 5px; overflow: hidden; margin-bottom: 10px;
+    }
+    .mode-tab {
+      flex: 1; padding: 8px 10px;
+      background: transparent; border: none;
+      color: var(--text-2); font-size: 12px; font-weight: 500;
+      cursor: pointer; text-align: center; transition: all .15s;
+    }
+    .mode-tab.on { background: var(--bg-3); color: var(--text-1); }
+
+    .mode-desc { font-size: 11px; color: var(--text-2); line-height: 1.55; margin-bottom: 12px; }
+
+    .decompose-btn {
+      width: 100%; height: 40px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 4px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .2s, transform .1s;
+    }
+    .decompose-btn:hover:not(:disabled) { background: var(--accent-h); }
+    .decompose-btn:active:not(:disabled) { transform: scale(.98); }
+    .decompose-btn:disabled { cursor: not-allowed; }
+    .decompose-btn.done { background: var(--success); }
+
+    .btn-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin .65s linear infinite; display: none;
+    }
+    .decompose-btn.loading .btn-spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .success-note {
+      display: none; align-items: center; gap: 8px;
+      background: rgba(45,155,100,.12);
+      border: 1px solid rgba(45,155,100,.35);
+      border-radius: 4px; padding: 9px 11px;
+      margin-top: 10px; font-size: 12px; color: #4ecb8d;
+    }
+    .success-note.show { display: flex; }
+
+    /* ── PROPERTIES PANEL (post-decompose) ──────────────── */
+
+    .props-block { display: none; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .props-block.show { display: block; }
+
+    .props-title {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text-2); margin-bottom: 10px;
+    }
+
+    .selected-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(18,104,210,.2);
+      border: 1px solid rgba(18,104,210,.4);
+      border-radius: 4px; padding: 4px 9px;
+      font-size: 12px; font-weight: 500; color: #8ab8f5;
+      margin-bottom: 14px;
+    }
+    .selected-pill.empty {
+      background: rgba(255,255,255,.05);
+      border-color: rgba(255,255,255,.1);
+      color: var(--text-3);
+    }
+
+    .prop-group { margin-bottom: 14px; }
+
+    .prop-group-label {
+      font-size: 9.5px; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--text-3);
+      margin-bottom: 8px;
+    }
+
+    .prop-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 7px;
+    }
+
+    .prop-row label {
+      width: 22px; flex-shrink: 0;
+      font-size: 10px; color: var(--text-3); text-align: right;
+    }
+
+    .prop-row input[type=range] {
+      -webkit-appearance: none; appearance: none;
+      flex: 1; height: 3px; border-radius: 2px;
+      background: var(--bg-3); outline: none;
+      cursor: ew-resize;
+    }
+    .prop-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px; height: 13px; border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--accent);
+      cursor: ew-resize;
+      transition: box-shadow .15s;
+    }
+    .prop-row input[type=range]::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 0 4px rgba(18,104,210,.25);
+    }
+
+    .prop-val {
+      width: 36px; flex-shrink: 0;
+      font-size: 10px; color: var(--text-2);
+      text-align: right; font-variant-numeric: tabular-nums;
+    }
+
+    /* Colored track for color sliders */
+    #sl-hue {
+      background: linear-gradient(to right,
+        hsl(0,100%,50%),hsl(60,100%,50%),hsl(120,100%,50%),
+        hsl(180,100%,50%),hsl(240,100%,50%),hsl(300,100%,50%),hsl(360,100%,50%));
+    }
+    #sl-hue::-webkit-slider-thumb { border-color: #888; }
+
+    #sl-brightness { background: linear-gradient(to right,#000,#fff); }
+    #sl-brightness::-webkit-slider-thumb { border-color: #888; }
+
+    #sl-saturation { background: linear-gradient(to right,#888,#e55); }
+    #sl-saturation::-webkit-slider-thumb { border-color: #888; }
+
+    .reset-btn {
+      width: 100%; padding: 7px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-2); font-size: 12px;
+      cursor: pointer; transition: all .15s;
+    }
+    .reset-btn:hover { background: var(--bg-3); color: var(--text-1); border-color: #555; }
+
+    /* ── DOWNLOAD BLOCK ─────────────────────────────────── */
+
+    .download-block { display: none; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .download-block.show { display: block; }
+
+    .block-label {
+      font-size: 9.5px; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--text-3); margin-bottom: 8px;
+    }
+
+    .export-apps { display: flex; gap: 6px; margin-bottom: 10px; }
+
+    .app-btn {
+      flex: 1; padding: 7px 5px;
+      background: var(--bg-1); border: 1px solid var(--border);
+      border-radius: 4px; color: #bbb;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; text-align: center;
+      transition: all .15s;
+    }
+    .app-btn:hover { background: var(--bg-3); border-color: #555; color: #fff; }
+
+    .download-canvas-btn {
+      width: 100%; height: 40px;
+      background: #2e2e2e;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-1); font-size: 13px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s;
+    }
+    .download-canvas-btn:hover { background: #3a3a3a; border-color: #555; }
+
+    /* ── LICENSE BLOCK ──────────────────────────────────── */
+
+    .license-block { }
+
+    .license-opt {
+      display: flex; align-items: center; gap: 9px;
+      padding: 7px 0; cursor: pointer;
+    }
+
+    .radio {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid #555; flex-shrink: 0; position: relative;
+      transition: border-color .15s;
+    }
+    .radio.active { border-color: var(--accent); }
+    .radio.active::after {
+      content: ''; position: absolute; inset: 2px;
+      background: var(--accent); border-radius: 50%;
+    }
+
+    .license-name { font-size: 12px; color: #ddd; }
+    .license-sub  { font-size: 10px; color: var(--text-3); }
+    .info-icon    { margin-left: auto; font-size: 11px; color: var(--text-3); cursor: help; }
+
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    .dl-type-row { display: flex; gap: 6px; }
+
+    .dl-type-btn {
+      padding: 7px 16px;
+      background: var(--bg-3); border: 1px solid var(--border);
+      border-radius: 3px; color: #ccc;
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      transition: all .15s;
+    }
+    .dl-type-btn:hover { background: #3a3a3a; border-color: #555; color: #fff; }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────── -->
+<header class="header">
+  <a href="#" class="logo">
+    <div class="logo-mark">St</div>
+    <span class="logo-name">Adobe Stock</span>
+  </a>
+  <nav class="header-nav">
+    <span class="nav-item">AI Studio <span class="caret">▾</span></span>
+    <span class="nav-item">Videos <span class="caret">▾</span></span>
+    <span class="nav-item">Images <span class="caret">▾</span></span>
+    <span class="nav-item">Templates <span class="caret">▾</span></span>
+    <span class="nav-item">Audio <span class="caret">▾</span></span>
+  </nav>
+  <div class="header-search">
+    <input type="text" value="fruit bowl" placeholder="Search Adobe Stock…">
+    <span class="search-icon">⌕</span>
+  </div>
+  <div class="header-right">
+    <span class="link-plain">Sell</span>
+    <span class="link-plain">Pricing</span>
+    <button class="btn-primary">Start free trial</button>
+  </div>
+</header>
+
+<!-- ── PAGE ────────────────────────────────────────────── -->
+<div class="page">
+
+  <!-- ── LAYERS SIDEBAR ────────────────────────────────── -->
+  <aside class="layers-sidebar" id="sidebar">
+    <div class="sidebar-inner">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Layers</span>
+        <span class="layer-count">5</span>
+      </div>
+
+      <!-- top → bottom render order (apple on top, background at base) -->
+      <div class="layer-row" id="row-apple" onclick="selectLayer('apple')">
+        <span class="eye-btn" id="eye-apple" onclick="toggleVis(event,'apple')">👁</span>
+        <div class="thumb"><img src="images/apple.png" alt="Apple"></div>
+        <div class="layer-info">
+          <div class="layer-name">Apple</div>
+          <div class="layer-meta">PNG · 1080×1080</div>
+        </div>
+      </div>
+
+      <div class="layer-row" id="row-pear" onclick="selectLayer('pear')">
+        <span class="eye-btn" id="eye-pear" onclick="toggleVis(event,'pear')">👁</span>
+        <div class="thumb"><img src="images/pear.png" alt="Pear"></div>
+        <div class="layer-info">
+          <div class="layer-name">Pear</div>
+          <div class="layer-meta">PNG · 1080×1080</div>
+        </div>
+      </div>
+
+      <div class="layer-row" id="row-banana" onclick="selectLayer('banana')">
+        <span class="eye-btn" id="eye-banana" onclick="toggleVis(event,'banana')">👁</span>
+        <div class="thumb"><img src="images/banana.png" alt="Banana"></div>
+        <div class="layer-info">
+          <div class="layer-name">Banana</div>
+          <div class="layer-meta">PNG · 1080×1080</div>
+        </div>
+      </div>
+
+      <div class="layer-row" id="row-grapes" onclick="selectLayer('grapes')">
+        <span class="eye-btn" id="eye-grapes" onclick="toggleVis(event,'grapes')">👁</span>
+        <div class="thumb"><img src="images/grapes.png" alt="Grapes"></div>
+        <div class="layer-info">
+          <div class="layer-name">Grapes</div>
+          <div class="layer-meta">PNG · 1080×1080</div>
+        </div>
+      </div>
+
+      <div class="layer-row" id="row-background" onclick="selectLayer('background')">
+        <span class="eye-btn" id="eye-background" onclick="toggleVis(event,'background')">👁</span>
+        <div class="thumb"><img src="images/background.png" alt="Background"></div>
+        <div class="layer-info">
+          <div class="layer-name">Background</div>
+          <div class="layer-meta">PNG · 1080×1080</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── CANVAS ─────────────────────────────────────────── -->
+  <main class="canvas-wrap">
+    <div class="canvas-frame" id="canvasFrame">
+
+      <!-- scan effect -->
+      <div class="scan-overlay" id="scanOverlay">
+        <div class="scan-glow"></div>
+        <div class="scan-line"></div>
+      </div>
+
+      <!-- full composite (pre-decompose) -->
+      <img src="images/full-image.png" id="img-full" alt="Fruit bowl">
+
+      <!-- layer containers: background → grapes → banana → pear → apple (z-index 1..5) -->
+      <div class="lc" id="lc-background" style="z-index:1"
+           onmousedown="onLCDown(event,'background')">
+        <img src="images/background.png" class="layer-img" id="img-background" alt="Background">
+        <div class="lc-handles">
+          <div class="sel-border"></div>
+          <div class="handle h-tl" onmousedown="onHandleDown(event,'background')"></div>
+          <div class="handle h-tr" onmousedown="onHandleDown(event,'background')"></div>
+          <div class="handle h-bl" onmousedown="onHandleDown(event,'background')"></div>
+          <div class="handle h-br" onmousedown="onHandleDown(event,'background')"></div>
+        </div>
+      </div>
+
+      <div class="lc" id="lc-grapes" style="z-index:2"
+           onmousedown="onLCDown(event,'grapes')">
+        <img src="images/grapes.png" class="layer-img" id="img-grapes" alt="Grapes">
+        <div class="lc-handles">
+          <div class="sel-border"></div>
+          <div class="handle h-tl" onmousedown="onHandleDown(event,'grapes')"></div>
+          <div class="handle h-tr" onmousedown="onHandleDown(event,'grapes')"></div>
+          <div class="handle h-bl" onmousedown="onHandleDown(event,'grapes')"></div>
+          <div class="handle h-br" onmousedown="onHandleDown(event,'grapes')"></div>
+        </div>
+      </div>
+
+      <div class="lc" id="lc-banana" style="z-index:3"
+           onmousedown="onLCDown(event,'banana')">
+        <img src="images/banana.png" class="layer-img" id="img-banana" alt="Banana">
+        <div class="lc-handles">
+          <div class="sel-border"></div>
+          <div class="handle h-tl" onmousedown="onHandleDown(event,'banana')"></div>
+          <div class="handle h-tr" onmousedown="onHandleDown(event,'banana')"></div>
+          <div class="handle h-bl" onmousedown="onHandleDown(event,'banana')"></div>
+          <div class="handle h-br" onmousedown="onHandleDown(event,'banana')"></div>
+        </div>
+      </div>
+
+      <div class="lc" id="lc-pear" style="z-index:4"
+           onmousedown="onLCDown(event,'pear')">
+        <img src="images/pear.png" class="layer-img" id="img-pear" alt="Pear">
+        <div class="lc-handles">
+          <div class="sel-border"></div>
+          <div class="handle h-tl" onmousedown="onHandleDown(event,'pear')"></div>
+          <div class="handle h-tr" onmousedown="onHandleDown(event,'pear')"></div>
+          <div class="handle h-bl" onmousedown="onHandleDown(event,'pear')"></div>
+          <div class="handle h-br" onmousedown="onHandleDown(event,'pear')"></div>
+        </div>
+      </div>
+
+      <div class="lc" id="lc-apple" style="z-index:5"
+           onmousedown="onLCDown(event,'apple')">
+        <img src="images/apple.png" class="layer-img" id="img-apple" alt="Apple">
+        <div class="lc-handles">
+          <div class="sel-border"></div>
+          <div class="handle h-tl" onmousedown="onHandleDown(event,'apple')"></div>
+          <div class="handle h-tr" onmousedown="onHandleDown(event,'apple')"></div>
+          <div class="handle h-bl" onmousedown="onHandleDown(event,'apple')"></div>
+          <div class="handle h-br" onmousedown="onHandleDown(event,'apple')"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-hint" id="canvasHint">Select a layer to move, scale, or adjust colors</div>
+  </main>
+
+  <!-- ── INFO PANEL ─────────────────────────────────────── -->
+  <aside class="info-panel">
+    <div class="panel-nav">
+      <div class="panel-nav-btn">‹</div>
+      <div class="panel-nav-btn">›</div>
+      <div class="panel-nav-btn">✕</div>
+    </div>
+
+    <div class="transparent-badge">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x=".75" y=".75" width="10.5" height="10.5" rx="1.25"/>
+        <path d="M3.5 8.5L5.5 6.5L7.5 8.5"/>
+      </svg>
+      Transparent PNG available
+    </div>
+
+    <h1 class="img-title">Fresh fruit bowl with tropical assortment</h1>
+    <p class="img-author">By Adobe Stock</p>
+
+    <div class="meta-grid">
+      <div class="meta-cell"><label>Dimensions</label><span>1080 × 1080 px</span></div>
+      <div class="meta-cell"><label>File Type</label><span>JPEG and PNG</span></div>
+      <div class="meta-cell"><label>Category</label><span>Food</span></div>
+      <div class="meta-cell"><label>License Type</label><span>Standard or Extended</span></div>
+    </div>
+
+    <!-- Smart Layers (pre-decompose) -->
+    <div class="sl-block" id="slBlock">
+      <div class="sl-header">
+        <span class="sl-badge">✦ Smart Layers</span>
+        <span class="sl-beta">Beta</span>
+      </div>
+
+      <div class="mode-switcher">
+        <button class="mode-tab on" id="tab-light" onclick="setMode('light')">Light Mode</button>
+        <button class="mode-tab"    id="tab-ultra" onclick="setMode('ultra')">Ultra Mode</button>
+      </div>
+
+      <p class="mode-desc" id="modeDesc">
+        Produces 3–4 primary layers — subject, background, and shadows — for fast, targeted edits.
+      </p>
+
+      <button class="decompose-btn" id="decomposeBtn" onclick="runDecompose()">
+        <div class="btn-spinner" id="btnSpinner"></div>
+        <span id="btnLabel">✦ &nbsp;Decompose Image</span>
+      </button>
+
+      <div class="success-note" id="successNote">
+        <span>✓</span>
+        <span>5 layers detected — ready to edit</span>
+      </div>
+    </div>
+
+    <!-- Properties (post-decompose) -->
+    <div class="props-block" id="propsBlock">
+      <div class="props-title">Layer Properties</div>
+
+      <div class="selected-pill empty" id="selectedPill">— Select a layer —</div>
+
+      <div class="prop-group">
+        <div class="prop-group-label">Transform</div>
+
+        <div class="prop-row">
+          <label>X</label>
+          <input type="range" id="sl-tx" min="-300" max="300" value="0"
+                 oninput="onSlider('tx',+this.value)">
+          <span class="prop-val" id="val-tx">0px</span>
+        </div>
+
+        <div class="prop-row">
+          <label>Y</label>
+          <input type="range" id="sl-ty" min="-300" max="300" value="0"
+                 oninput="onSlider('ty',+this.value)">
+          <span class="prop-val" id="val-ty">0px</span>
+        </div>
+
+        <div class="prop-row">
+          <label>Sc</label>
+          <input type="range" id="sl-scale" min="10" max="300" value="100"
+                 oninput="onSlider('scale',+this.value/100)">
+          <span class="prop-val" id="val-scale">1.0×</span>
+        </div>
+      </div>
+
+      <div class="prop-group">
+        <div class="prop-group-label">Color</div>
+
+        <div class="prop-row">
+          <label>H</label>
+          <input type="range" id="sl-hue" min="0" max="360" value="0"
+                 oninput="onSlider('hue',+this.value)">
+          <span class="prop-val" id="val-hue">0°</span>
+        </div>
+
+        <div class="prop-row">
+          <label>Br</label>
+          <input type="range" id="sl-brightness" min="20" max="200" value="100"
+                 oninput="onSlider('brightness',+this.value)">
+          <span class="prop-val" id="val-brightness">100%</span>
+        </div>
+
+        <div class="prop-row">
+          <label>Sa</label>
+          <input type="range" id="sl-saturation" min="0" max="300" value="100"
+                 oninput="onSlider('saturation',+this.value)">
+          <span class="prop-val" id="val-saturation">100%</span>
+        </div>
+      </div>
+
+      <button class="reset-btn" onclick="resetLayer()">↺ &nbsp;Reset Layer</button>
+    </div>
+
+    <!-- Download (post-decompose) -->
+    <div class="download-block" id="downloadBlock">
+      <div class="block-label">Export Layers To</div>
+      <div class="export-apps">
+        <button class="app-btn">Ps</button>
+        <button class="app-btn">Ai</button>
+        <button class="app-btn">Pr</button>
+      </div>
+      <button class="download-canvas-btn" onclick="downloadCanvas()">
+        ↓ &nbsp;Download Canvas (PNG)
+      </button>
+    </div>
+
+    <!-- License -->
+    <div class="license-block">
+      <div class="block-label">License</div>
+
+      <div class="license-opt" onclick="pickLicense(0)">
+        <div class="radio active" id="radio-0"></div>
+        <div><div class="license-name">Standard License</div><div class="license-sub">Free with trial</div></div>
+        <span class="info-icon">ⓘ</span>
+      </div>
+
+      <div class="license-opt" onclick="pickLicense(1)">
+        <div class="radio" id="radio-1"></div>
+        <div><div class="license-name">Extended License</div></div>
+        <span class="info-icon">ⓘ</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="block-label">Download by type</div>
+      <div class="dl-type-row">
+        <button class="dl-type-btn">JPEG</button>
+        <button class="dl-type-btn">PNG</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+// ── Constants ────────────────────────────────────────────
+const LAYER_ORDER = ['background','grapes','banana','pear','apple']; // bottom → top
+
+// ── Per-layer state ──────────────────────────────────────
+const st = {};
+LAYER_ORDER.forEach(id => {
+  st[id] = { tx:0, ty:0, scale:1, hue:0, brightness:100, saturation:100, visible:true };
+});
+
+let selectedLayer = null;
+let decomposed = false;
+
+// ── Drag state ───────────────────────────────────────────
+let drag = null;
+// drag = { type:'move'|'scale', id, mx0, my0, tx0, ty0, scale0, initDist, lcx, lcy }
+
+// ── Apply CSS transform + filter to a layer ──────────────
+function applyTransform(id) {
+  const s = st[id];
+  const lc  = document.getElementById('lc-' + id);
+  const img = document.getElementById('img-' + id);
+  lc.style.transform  = `translate(${s.tx}px,${s.ty}px) scale(${s.scale})`;
+  img.style.filter    = `hue-rotate(${s.hue}deg) brightness(${s.brightness}%) saturate(${s.saturation}%)`;
+}
+
+// ── Layer selection ──────────────────────────────────────
+function selectLayer(id) {
+  // deselect old
+  if (selectedLayer) {
+    document.getElementById('lc-' + selectedLayer).classList.remove('selected');
+    document.getElementById('row-' + selectedLayer).classList.remove('selected');
+  }
+  selectedLayer = id;
+  if (id) {
+    document.getElementById('lc-' + id).classList.add('selected');
+    document.getElementById('row-' + id).classList.add('selected');
+  }
+  updatePropsPanel();
+  document.getElementById('canvasHint').classList.remove('show');
+}
+
+// ── Toggle layer visibility ──────────────────────────────
+function toggleVis(e, id) {
+  e.stopPropagation();
+  st[id].visible = !st[id].visible;
+  document.getElementById('lc-' + id).style.opacity = st[id].visible ? '1' : '0';
+  document.getElementById('lc-' + id).style.pointerEvents = st[id].visible ? '' : 'none';
+  document.getElementById('eye-' + id).classList.toggle('off', !st[id].visible);
+}
+
+// ── Properties panel sync ────────────────────────────────
+function updatePropsPanel() {
+  const pill = document.getElementById('selectedPill');
+  if (!selectedLayer) {
+    pill.textContent = '— Select a layer —';
+    pill.className = 'selected-pill empty';
+    return;
+  }
+  const names = { background:'Background', grapes:'Grapes', banana:'Banana', pear:'Pear', apple:'Apple' };
+  pill.textContent = '● ' + names[selectedLayer];
+  pill.className = 'selected-pill';
+  syncSliders(selectedLayer);
+}
+
+function syncSliders(id) {
+  const s = st[id];
+  setSlider('tx',        s.tx,                  `${Math.round(s.tx)}px`);
+  setSlider('ty',        s.ty,                  `${Math.round(s.ty)}px`);
+  setSlider('scale',     Math.round(s.scale*100), `${s.scale.toFixed(2)}×`);
+  setSlider('hue',       s.hue,                 `${Math.round(s.hue)}°`);
+  setSlider('brightness',s.brightness,          `${Math.round(s.brightness)}%`);
+  setSlider('saturation',s.saturation,          `${Math.round(s.saturation)}%`);
+}
+
+function setSlider(name, value, label) {
+  document.getElementById('sl-' + name).value = value;
+  document.getElementById('val-' + name).textContent = label;
+}
+
+// ── Slider input handler ─────────────────────────────────
+function onSlider(prop, value) {
+  if (!selectedLayer) return;
+  const s = st[selectedLayer];
+  if (prop === 'tx')         { s.tx = value;         setSlider('tx', value, `${Math.round(value)}px`); }
+  else if (prop === 'ty')    { s.ty = value;         setSlider('ty', value, `${Math.round(value)}px`); }
+  else if (prop === 'scale') { s.scale = value;       setSlider('scale', Math.round(value*100), `${value.toFixed(2)}×`); }
+  else if (prop === 'hue')   { s.hue = value;         setSlider('hue', value, `${Math.round(value)}°`); }
+  else if (prop === 'brightness') { s.brightness = value; setSlider('brightness', value, `${Math.round(value)}%`); }
+  else if (prop === 'saturation') { s.saturation = value; setSlider('saturation', value, `${Math.round(value)}%`); }
+  applyTransform(selectedLayer);
+}
+
+// ── Reset selected layer ─────────────────────────────────
+function resetLayer() {
+  if (!selectedLayer) return;
+  st[selectedLayer] = { tx:0, ty:0, scale:1, hue:0, brightness:100, saturation:100, visible:st[selectedLayer].visible };
+  applyTransform(selectedLayer);
+  syncSliders(selectedLayer);
+}
+
+// ── Drag: move ───────────────────────────────────────────
+function onLCDown(e, id) {
+  if (e.target.classList.contains('handle')) return; // handled by onHandleDown
+  e.preventDefault();
+  selectLayer(id);
+  const s = st[id];
+  drag = { type:'move', id, mx0:e.clientX, my0:e.clientY, tx0:s.tx, ty0:s.ty };
+  document.body.style.cursor = 'move';
+  document.body.style.userSelect = 'none';
+}
+
+// ── Drag: scale ──────────────────────────────────────────
+function onHandleDown(e, id) {
+  e.stopPropagation();
+  e.preventDefault();
+  selectLayer(id);
+  const frame = document.getElementById('canvasFrame');
+  const rect  = frame.getBoundingClientRect();
+  const s     = st[id];
+  // layer visual center in viewport coords
+  const lcx = rect.left + rect.width  / 2 + s.tx;
+  const lcy = rect.top  + rect.height / 2 + s.ty;
+  const initDist = Math.hypot(e.clientX - lcx, e.clientY - lcy) || 1;
+  drag = { type:'scale', id, scale0:s.scale, initDist, lcx, lcy };
+  document.body.style.cursor = 'nwse-resize';
+  document.body.style.userSelect = 'none';
+}
+
+// ── Global mouse move / up ───────────────────────────────
+document.addEventListener('mousemove', e => {
+  if (!drag) return;
+  const s = st[drag.id];
+  if (drag.type === 'move') {
+    s.tx = drag.tx0 + (e.clientX - drag.mx0);
+    s.ty = drag.ty0 + (e.clientY - drag.my0);
+  } else {
+    const dist  = Math.hypot(e.clientX - drag.lcx, e.clientY - drag.lcy);
+    s.scale = Math.max(0.05, Math.min(4, drag.scale0 * dist / drag.initDist));
+  }
+  applyTransform(drag.id);
+  if (drag.id === selectedLayer) syncSliders(drag.id);
+});
+
+document.addEventListener('mouseup', () => {
+  if (!drag) return;
+  drag = null;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+});
+
+// ── Mode switcher ────────────────────────────────────────
+function setMode(m) {
+  document.getElementById('tab-light').classList.toggle('on', m === 'light');
+  document.getElementById('tab-ultra').classList.toggle('on', m === 'ultra');
+  document.getElementById('modeDesc').textContent = m === 'light'
+    ? 'Produces 3–4 primary layers — subject, background, and shadows — for fast, targeted edits.'
+    : 'Fully decomposed structure: up to 24 independent layers with element-level control.';
+}
+
+// ── Decompose sequence ───────────────────────────────────
+function runDecompose() {
+  if (decomposed) return;
+  decomposed = true;
+
+  const btn     = document.getElementById('decomposeBtn');
+  const spinner = document.getElementById('btnSpinner');
+  const label   = document.getElementById('btnLabel');
+
+  btn.disabled = true;
+  btn.classList.add('loading');
+  label.textContent = 'Decomposing…';
+
+  // start scan after short delay
+  setTimeout(() => {
+    document.getElementById('scanOverlay').style.opacity = '1';
+  }, 300);
+
+  // reveal layers
+  setTimeout(() => {
+    // fade out full image
+    const full = document.getElementById('img-full');
+    full.style.opacity = '0';
+    full.style.pointerEvents = 'none';
+
+    // hide scan
+    const overlay = document.getElementById('scanOverlay');
+    overlay.style.transition = 'opacity 0.3s';
+    overlay.style.opacity = '0';
+
+    // stagger layer fade-in bottom → top
+    LAYER_ORDER.forEach((id, i) => {
+      setTimeout(() => {
+        document.getElementById('lc-' + id).classList.add('visible');
+      }, i * 140);
+    });
+
+    // open sidebar with staggered row animation (reversed: apple first = top of panel)
+    document.getElementById('sidebar').classList.add('open');
+    const rowOrder = ['apple','pear','banana','grapes','background'];
+    rowOrder.forEach((id, i) => {
+      setTimeout(() => {
+        document.getElementById('row-' + id).classList.add('visible');
+      }, 80 + i * 70);
+    });
+
+  }, 1900);
+
+  // done state
+  setTimeout(() => {
+    spinner.style.display = 'none';
+    btn.classList.remove('loading');
+    btn.classList.add('done');
+    label.textContent = '✓  Decomposed';
+
+    document.getElementById('successNote').classList.add('show');
+
+    // swap panels
+    document.getElementById('slBlock').classList.add('hidden');
+    document.getElementById('propsBlock').classList.add('show');
+    document.getElementById('downloadBlock').classList.add('show');
+
+    document.getElementById('canvasHint').classList.add('show');
+  }, 2600);
+}
+
+// ── Download canvas ───────────────────────────────────────
+// ctx.filter is unreliable for drawImage() across browsers (Safari ignores it).
+// Instead we bake color adjustments into pixels via ImageData before compositing.
+function downloadCanvas() {
+  const EXPORT = 1080;
+  const out    = document.createElement('canvas');
+  out.width    = EXPORT;
+  out.height   = EXPORT;
+  const ctx    = out.getContext('2d');
+
+  const frame       = document.getElementById('canvasFrame');
+  const displaySize = frame.offsetWidth;
+  const ratio       = EXPORT / displaySize;
+  const cx = EXPORT / 2, cy = EXPORT / 2;
+
+  LAYER_ORDER.forEach(id => {
+    const s = st[id];
+    if (!s.visible) return;
+
+    const img = document.getElementById('img-' + id);
+
+    // 1. Draw the raw image onto a scratch canvas at export resolution.
+    const scratch = document.createElement('canvas');
+    scratch.width  = EXPORT;
+    scratch.height = EXPORT;
+    const sctx = scratch.getContext('2d');
+    sctx.drawImage(img, 0, 0, EXPORT, EXPORT);
+
+    // 2. Apply color adjustments in-place via pixel manipulation (always reliable).
+    if (s.hue !== 0 || s.brightness !== 100 || s.saturation !== 100) {
+      colorAdjust(sctx, EXPORT, EXPORT, s.hue, s.brightness / 100, s.saturation / 100);
+    }
+
+    // 3. Composite the color-corrected scratch canvas onto the output with transform.
+    ctx.save();
+    ctx.translate(cx + s.tx * ratio, cy + s.ty * ratio);
+    ctx.scale(s.scale, s.scale);
+    ctx.drawImage(scratch, -cx, -cy, EXPORT, EXPORT);
+    ctx.restore();
+  });
+
+  out.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = 'smart-layers-export.png';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+}
+
+// ── Pixel-level color adjustment ─────────────────────────
+// Mirrors CSS hue-rotate / brightness / saturate as closely as possible.
+function colorAdjust(ctx, w, h, hueDeg, bFactor, sFactor) {
+  const id   = ctx.getImageData(0, 0, w, h);
+  const data = id.data;
+  const hShift = hueDeg / 360;
+
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] === 0) continue; // skip fully transparent
+
+    let r = data[i]     / 255;
+    let g = data[i + 1] / 255;
+    let b = data[i + 2] / 255;
+
+    // brightness — simple channel scale (matches CSS brightness())
+    r = clamp(r * bFactor);
+    g = clamp(g * bFactor);
+    b = clamp(b * bFactor);
+
+    // hue-rotate + saturate — work in HSL
+    const [h, s, l] = rgbToHsl(r, g, b);
+    const nh = ((h + hShift) % 1 + 1) % 1;
+    const ns = clamp(s * sFactor);
+    [r, g, b] = hslToRgb(nh, ns, l);
+
+    data[i]     = Math.round(r * 255);
+    data[i + 1] = Math.round(g * 255);
+    data[i + 2] = Math.round(b * 255);
+  }
+
+  ctx.putImageData(id, 0, 0);
+}
+
+function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+function rgbToHsl(r, g, b) {
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if      (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+  else if (max === g) h = (b - r) / d + 2;
+  else                h = (r - g) / d + 4;
+  return [h / 6, s, l];
+}
+
+function hslToRgb(h, s, l) {
+  if (s === 0) return [l, l, l];
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const f = (t) => {
+    if (t < 0) t += 1; if (t > 1) t -= 1;
+    if (t < 1/6) return p + (q - p) * 6 * t;
+    if (t < 1/2) return q;
+    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    return p;
+  };
+  return [f(h + 1/3), f(h), f(h - 1/3)];
+}
+
+// ── License radios ────────────────────────────────────────
+function pickLicense(i) {
+  document.querySelectorAll('.radio').forEach((r, idx) => {
+    r.classList.toggle('active', idx === i);
+  });
+}
+</script>
+</body>
+</html>
