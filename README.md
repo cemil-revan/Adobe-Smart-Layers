@@ -6,7 +6,7 @@ Built as a product design prototype to validate the core user experience before 
 
 **Live demo:** [cemil-revan.github.io/Adobe-Smart-Layers](https://cemil-revan.github.io/Adobe-Smart-Layers/)
 
-**All code contained with index.html**
+**All code contained within index.html**
 
 ---
 
